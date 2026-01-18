@@ -1,11 +1,11 @@
 import z from "zod";
 
 export const importSchema = z.object({
-    url: z.url(),
+    url: z.string().url(),
 });
 
 export const bulkImportSchema = z.object({
-    url: z.url(),
+    url: z.string().url(),
     search: z.string(),
 });
 

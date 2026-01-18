@@ -47,13 +47,28 @@ export function NavUser({ user }: NavUserProps) {
       }
     })
   }
+
   const avatars = ['Amaya', 'Christian', 'Ryan', 'Leah',
     'Adrian', 'Easton', 'Leo', 'Jade', 'Eden',
     'Vivian', 'Destiny', 'Riley', 'Ryker',
     'Chase', 'Sara', 'Brooklynn', 'Maria',
     'Oliver', 'Valentina', 'Katherine'];
-  
+
+  function getInitials() {
+    if (!user.name) return "NA";
+    for (let i = 0; i < user.name.length; i++) {
+      if (user.name[i] === ' ' && i + 1 < user.name.length) {
+        return (user.name[0] + user.name[i + 1]).toUpperCase();
+      } else if (i === user.name.length - 1) {
+        return (user.name[0]).toUpperCase();
+      } else {
+        continue;
+      }
+    }
+  }
+
   const randomAvatar = avatars[Math.floor(Math.random() * avatars.length)];
+  const initials = getInitials();
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -65,7 +80,7 @@ export function NavUser({ user }: NavUserProps) {
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.image ?? `https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${randomAvatar}`} alt={user.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
