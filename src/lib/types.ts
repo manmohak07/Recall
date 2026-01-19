@@ -6,10 +6,10 @@ export interface NavPrimaryProps {
     title: string
     to: string
     icon: LucideIcon
-    activeOptions: {exact: boolean}
+    activeOptions: { exact: boolean }
   }[]
 }
 
 export interface NavUserProps {
-    user: User
+  user: User
 }

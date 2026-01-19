@@ -12,7 +12,7 @@ export function Navbar() {
                 onSuccess: () => {
                     toast.success('Logged out successfully!')
                 },
-                onError: ({ error}) => {
+                onError: ({ error }) => {
                     toast.error(`Error: ${error.message}`)
                 }
             }

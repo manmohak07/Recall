@@ -3,7 +3,7 @@ import { getRequestHeaders } from "@tanstack/react-start/server";
 import { redirect } from "@tanstack/react-router";
 import { auth } from "@/lib/auth";
 
-export const authFnMiddleware = createMiddleware({ type: 'function' }).server(async ({ next }) => {
+export const authFnMiddleware = createMiddleware({ type: 'request' }).server(async ({ next }) => {
     const headers = getRequestHeaders();
     const session = await auth.api.getSession({ headers });
 
@@ -11,4 +11,19 @@ export const authFnMiddleware = createMiddleware({ type: 'function' }).server(as
         throw redirect({ to: '/login' });
     }
     return next({ context: { session } });
-}) 
+})
+
+export const authMiddleware = createMiddleware({ type: 'request' }).server(async ({ next, request }) => {
+    const url = new URL(request.url);
+
+    if (!url.pathname.startsWith('/dashboard')) {
+        return next();
+    }
+    const headers = getRequestHeaders();
+    const session = await auth.api.getSession({ headers });
+
+    if (!session) {
+        throw redirect({ to: '/login' });
+    }
+    return next({ context: { session } });
+})

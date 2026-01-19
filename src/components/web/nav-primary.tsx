@@ -33,7 +33,7 @@ export function NavPrimary({ items }: NavPrimaryProps) {
                   <Link activeProps={{
                     'data-active': true,
                   }}
-                   to={item.to} activeOptions={item.activeOptions}>
+                    to={item.to} activeOptions={item.activeOptions}>
                     <item.icon />
                     <span>{item.title}</span>
                   </Link>
