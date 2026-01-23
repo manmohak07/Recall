@@ -38,7 +38,7 @@ export const scrapeURLFn = createServerFn({ method: 'POST' })
             const jsonData = res.json as z.infer<typeof extractSchema>;
             let publishedAt = null;
             if (jsonData.publishedAt) {
-                const parsed = jsonData.publishedAt;
+                const parsed = new Date(jsonData.publishedAt);
                 if (!isNaN(parsed.getTime())) {
                     publishedAt = parsed;
                 }
@@ -121,7 +121,7 @@ export const bulkScrapeURLsFn = createServerFn({ method: 'POST' }).middleware([a
                 const jsonData = res.json as z.infer<typeof extractSchema>;
                 let publishedAt = null;
                 if (jsonData.publishedAt) {
-                    const parsed = jsonData.publishedAt;
+                    const parsed = new Date(jsonData.publishedAt);
                     if (!isNaN(parsed.getTime())) {
                         publishedAt = parsed;
                     }
