@@ -3,6 +3,7 @@ import { firecrawl } from '../lib/firecrawl'
 import { bulkImportSchema, extractSchema, importSchema } from '@/schemas/import';
 import { prisma } from '@/db';
 import { z } from 'zod';
+import { notFound } from '@tanstack/react-router';
 
 import { authFnMiddleware, authMiddleware } from '@/middlewares/auth';
 
@@ -159,6 +160,7 @@ export const bulkScrapeURLsFn = createServerFn({ method: 'POST' }).middleware([a
 
 export const getItemsFn = createServerFn({ method: 'GET' }).middleware([authFnMiddleware])
     .handler(async ({ context }) => {
+        await new Promise((resolve) => setTimeout(resolve, 2000))
         const items = await prisma.savedItem.findMany({
             where: {
                 userId: context.session.user.id,
@@ -170,3 +172,23 @@ export const getItemsFn = createServerFn({ method: 'GET' }).middleware([authFnMi
 
         return items
     })
+
+export const getItemById = createServerFn({ method: 'GET' })
+    .middleware([authFnMiddleware])
+    .inputValidator(z.object({ id: z.string() }))
+    .handler(
+        async ({ context, data }) => {
+            const item = await prisma.savedItem.findUnique({
+                where: {
+                    userId: context.session.user.id,
+                    id: data.id,
+                },
+            })
+
+            if (!item) {
+                throw notFound()
+            }
+
+            return item
+        }
+    )

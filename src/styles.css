@@ -3,6 +3,8 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/jetbrains-mono";
 
+@source "../node_modules/streamdown/dist/*.js";
+
 @layer base {
   body {
     @apply m-0 font-sans bg-background text-foreground;
