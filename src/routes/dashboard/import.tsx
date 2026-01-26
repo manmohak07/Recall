@@ -8,10 +8,12 @@ import { importSchema, bulkImportSchema } from '@/schemas/import'
 import { useState, useTransition } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { bulkScrapeURLsFn, mapUrlFn, scrapeURLFn } from '../../data/items'
+import { mapUrlFn, scrapeURLFn } from '../../data/items'
 import { toast } from 'sonner'
 import { type SearchResultWeb } from '@mendable/firecrawl-js'
 import { Checkbox } from '@/components/ui/checkbox'
+import { BulkScrapeProgress, bulkScrapeURLsFn, searchWebFn } from '../../data/items'
+import { Progress } from '@/components/ui/progress'
 
 export const Route = createFileRoute('/dashboard/import')({
   component: RouteComponent,
@@ -23,6 +25,7 @@ function RouteComponent() {
   const [bulkIsPending, startBulkTransition] = useTransition()
   const [discoveredLinks, setDiscoveredLinks] = useState<Array<SearchResultWeb>>([])
   const [selectedURLs, setSelectedURLs] = useState<Set<string>>(new Set())
+  const [progress, setProgress] = useState<BulkScrapeProgress | null>(null)
 
   function handleSelectAll() {
     if (selectedURLs.size === discoveredLinks.length) {
@@ -51,13 +54,38 @@ function RouteComponent() {
         return;
       }
 
-      await bulkScrapeURLsFn({
+      setProgress({
+        completed: 0,
+        total: selectedURLs.size,
+        url: '',
+        status: 'success',
+      })
+
+      let successCount = 0;
+      let failedCount = 0;
+
+      for await (const update of await bulkScrapeURLsFn({
         data: {
           urls: Array.from(selectedURLs)
         }
-      })
+      })) {
+        setProgress(update)
 
-      toast.success(`Imported ${selectedURLs.size} URLs`)
+        if (update.status === 'success') {
+          successCount++;
+        } else {
+          failedCount++;
+        }
+      }
+
+      setProgress(null);
+
+      if (failedCount > 0) {
+        toast.success(`Imported ${successCount} URLs and ${failedCount} imports failed`)
+      }
+      else {
+        toast.success(`Imported ${successCount} URLs`)
+      }
     })
   }
 
@@ -267,9 +295,25 @@ function RouteComponent() {
                         </label>
                       ))}
                     </div>
+
+                    {progress && (
+                      <div className='space-y-2'>
+                        <div className='flex items-center justify-between text-sm'>
+                          <span className='text-muted-foreground'>
+                            Importing: {progress.completed} / {progress.total}
+                          </span>
+                          <span className='font-medium'>
+                            {Math.round(progress.completed / progress.total) * 100}
+                          </span>
+                        </div>
+                        <Progress value={progress.completed / progress.total * 100} />
+                      </div>
+                    )}
+
                     <Button disabled={bulkIsPending} onClick={handleBulkImport} className='w-full' type='button'>{bulkIsPending ? (
                       <>
-                      <Loader2 className='size-4 animate-spin'/>Importing...
+                        <Loader2 className='size-4 animate-spin' />
+                        {progress ? `Importing ${progress.completed}/${progress.total}...` : 'Starting...'}
                       </>
                     ) : (
                       `Import ${selectedURLs.size} URLs`

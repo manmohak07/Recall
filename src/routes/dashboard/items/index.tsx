@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import { Button, buttonVariants } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { getItemsFn } from '@/data/items'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { Copy, Inbox } from 'lucide-react'
@@ -101,14 +101,14 @@ function ItemsList({ q, status, data }: {
       {filteredItems.map((item) => (
         <Card key={item.id} className='group overflow-hidden transition-all hover:shadow-lg pt-0'>
           <Link to='/dashboard/items/$itemId' params={{ itemId: item.id, }} className='block'>
-            {item.originalImage && (
-              <div className='aspect-video w-full overflow-hidden bg-muted'>
-                <img
-                  src={item.originalImage}
-                  alt={item.title ?? 'Thumbnail?'}
-                  className='h-full w-full object-cover transition-transform group-hover:scale-105' />
-              </div>
-            )}
+
+            <div className='aspect-video w-full overflow-hidden bg-muted'>
+              <img
+                src={item.originalImage ?? 'https://i.pinimg.com/736x/03/df/d4/03dfd481c5c8af72b5991a6eea833448.jpg'}
+                alt={item.title ?? 'Thumbnail?'}
+                className='h-full w-full object-cover transition-transform group-hover:scale-105' />
+            </div>
+
             <CardHeader className='space-y-3 pt-4'>
               <div className='flex items-center justify-between gap-2'>
                 <Badge variant={item.status === 'COMPLETED' ? 'default' : 'secondary'}>
@@ -126,6 +126,18 @@ function ItemsList({ q, status, data }: {
               </CardTitle>
 
               {item.author && <p className='text-xs text-muted-foreground'>{item.author}</p>}
+              {item.summary && (
+                <CardDescription className='line-clamp-3 text-sm'>
+                  {item.summary.substr(13)}
+                </CardDescription>
+              )}
+              {item.tags.length > 0 && (
+                <div className='flex flex-wrap gap-1.5 pt-2'>
+                  {item.tags.slice(0, 4).map((tag, index) => (
+                    <Badge variant="secondary" key={index}>{tag}</Badge>
+                  ))}
+                </div>
+              )}
             </CardHeader>
           </Link>
         </Card>

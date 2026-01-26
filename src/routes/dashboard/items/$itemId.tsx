@@ -3,11 +3,13 @@ import { Badge } from '@/components/ui/badge'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { getItemById } from '@/data/items'
+import { getItemById, saveSummaryAndGenerateTextFn } from '@/data/items'
 import { cn } from '@/lib/utils'
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { ArrowLeft, Calendar, ChevronDownIcon, Clock, ExternalLink, User } from 'lucide-react'
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router'
+import { ArrowLeft, Calendar, ChevronDownIcon, Clock, ExternalLink, Loader2, Sparkles, User } from 'lucide-react'
 import { useState } from 'react'
+import { useCompletion } from '@ai-sdk/react'
+import { toast } from 'sonner'
 
 export const Route = createFileRoute('/dashboard/items/$itemId')({
     component: RouteComponent,
@@ -16,23 +18,58 @@ export const Route = createFileRoute('/dashboard/items/$itemId')({
             id: params.itemId
         }
     }),
-    head: ({loaderData}) => ({
-    meta: [
-      {
-        title: loaderData?.title ?? 'Item Details',
-      },
-      {
-        property: 'og:image',
-        content: loaderData?.originalImage ?? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR8olvygEFZnZlu0iCvNbOQ33HNbs2CjYz2nQ&s'
-      },
-      
-    ],
-  }),
+    head: ({ loaderData }) => ({
+        meta: [
+            {
+                title: loaderData?.title ?? 'Item Details',
+            },
+            {
+                property: 'og:image',
+                content: loaderData?.originalImage ?? 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR8olvygEFZnZlu0iCvNbOQ33HNbs2CjYz2nQ&s'
+            },
+
+        ],
+    }),
 })
 
 function RouteComponent() {
     const data = Route.useLoaderData()
     const [contentOpen, setContentOpen] = useState(false)
+    const router = useRouter()
+
+    const { completion, complete, isLoading } = useCompletion({
+        api: '/api/ai/summary',
+        initialCompletion: data.summary ? data.summary : undefined ,
+        streamProtocol: 'text',
+        body: {
+            itemId: data.id,
+        },
+        onFinish: async(_prompt, completionText) => {
+            await saveSummaryAndGenerateTextFn({
+                data: {
+                    id: data.id,
+                    summary: completionText,
+                },
+            })
+
+            toast.success('Summary Generated')
+
+            router.invalidate()
+        },
+        onError: (e) => {
+            toast.error(e.message)
+        }
+    })
+
+    function generateSummary() {
+        if(!data.content) {
+            toast.error('No content available to summarise')
+            return
+        }
+
+        complete(data.content)
+    }
+
     return (
         <div className="mx-auto max-w-3xl space-y-6 w-full">
             <div className="flex justify-start">
@@ -51,7 +88,7 @@ function RouteComponent() {
                     className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
                     src={
                         data.originalImage ??
-                        'https://images.unsplash.com/photo-1635776062043-223faf322554?q=80&w=1632&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+                        'https://i.pinimg.com/736x/03/df/d4/03dfd481c5c8af72b5991a6eea833448.jpg'
                     }
                     alt={data.title ?? 'Item Image'}
                 />
@@ -98,7 +135,39 @@ function RouteComponent() {
                     </div>
                 )}
 
-                <p>Summary here</p>
+                <Card className='border-primary/20 bg-primary/5'>
+                    <CardContent>
+                        <div className='flex items-start justify-between gap-4'>
+                            <div className='flex-1'>
+                                <h2 className='text-sm font-semibold uppercase tracking-wide text-primary mb-3'>Summary</h2>
+
+                                {completion || data.summary ? (
+                                    <MessageResponse>{completion}</MessageResponse>
+                                ) : (
+                                    <p className='text-muted-foreground italic'>
+                                        {data.content ? 'No summary yet. Generate with AI' : 'No content available to summarise'}
+                                    </p>
+                                )}
+                            </div>
+
+                            {data.content && !data.summary && (
+                                <Button onClick={generateSummary} disabled={isLoading} size='sm'>
+                                    {isLoading ? (
+                                        <>
+                                            <Loader2 className='size-4 animate-spin' />
+                                            Generating...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Sparkles className='mr-2 h-4 w-4' /> 
+                                            Generate
+                                        </>
+                                    )}
+                                </Button>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
 
                 {data.content && (
                     <Collapsible open={contentOpen} onOpenChange={setContentOpen}>
